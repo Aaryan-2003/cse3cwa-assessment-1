@@ -44,11 +44,23 @@ export function generateWordSearchHtml(puzzle: WordSearchPuzzle): string {
   .word.found { text-decoration:line-through; color:#94a3b8; background:#f0fdf4; }
   button { margin-top: 16px; background: var(--primary); color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:600; cursor:pointer; }
   .status { margin-top: 12px; font-weight:600; color:#15803d; }
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  .typed-form { margin-top: 20px; display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px; justify-content:center; }
+  .typed-form label { display:flex; flex-direction:column; font-size:0.85rem; }
+  .typed-form input { margin-top:4px; padding:8px; border:1px solid var(--border); border-radius:6px; width:220px; }
+  .typed-form button { margin-top:0; }
 </style>
 </head>
 <body>
 <h1>Phoneme Word Search</h1>
-<div id="grid" class="grid"></div>
+<div id="grid" class="grid" aria-hidden="true"></div>
+<p id="liveMessage" class="sr-only" aria-live="polite"></p>
+<form id="typedForm" class="typed-form">
+  <label for="typedInput">Keyboard alternative: type a word's phonemes, space-separated
+    <input type="text" id="typedInput" placeholder="e.g. θ ɪ n">
+  </label>
+  <button type="submit">Check</button>
+</form>
 <button id="solveBtn">Show / hide answers</button>
 <p id="status" class="status" style="display:none;">All words found!</p>
 <div id="words" class="words"></div>
@@ -141,14 +153,39 @@ export function generateWordSearchHtml(puzzle: WordSearchPuzzle): string {
       if (foundIds.has(w.id)) return;
       const target = w.display.split(' ').join('');
       if (target === forward || target === backward) {
-        foundIds.add(w.id);
-        w.cells.forEach(function (co) {
-          const el = document.querySelector('[data-row="' + co.row + '"][data-col="' + co.col + '"]');
-          if (el) el.classList.add('found');
-        });
+        markFound(w);
       }
     });
   }
+
+  function markFound(w) {
+    foundIds.add(w.id);
+    w.cells.forEach(function (co) {
+      const el = document.querySelector('[data-row="' + co.row + '"][data-col="' + co.col + '"]');
+      if (el) el.classList.add('found');
+    });
+    liveMessageEl.textContent = 'Found ' + w.display + ', ' + w.english + '.';
+  }
+
+  const liveMessageEl = document.getElementById('liveMessage');
+  const typedForm = document.getElementById('typedForm');
+  const typedInput = document.getElementById('typedInput');
+
+  typedForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const guess = typedInput.value.trim().split(/\s+/).filter(Boolean).join('');
+    typedInput.value = '';
+    if (!guess) return;
+    const match = data.words.find(function (w) {
+      return !foundIds.has(w.id) && w.display.split(' ').join('') === guess;
+    });
+    if (match) {
+      markFound(match);
+      render();
+    } else {
+      liveMessageEl.textContent = 'No matching word. Try again.';
+    }
+  });
 
   let currentPath = [];
 

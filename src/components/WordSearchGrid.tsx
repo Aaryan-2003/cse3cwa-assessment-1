@@ -19,11 +19,39 @@ export function WordSearchGrid({ puzzle }: { puzzle: WordSearchPuzzle }) {
   const [foundCellKeys, setFoundCellKeys] = useState<Set<string>>(new Set());
   const [activePath, setActivePath] = useState<Cell[]>([]);
   const [showSolutions, setShowSolutions] = useState(false);
+  const [typedAnswer, setTypedAnswer] = useState("");
+  const [liveMessage, setLiveMessage] = useState("");
   const startCell = useRef<Cell | null>(null);
   const isSelecting = useRef(false);
   const gridRef = useRef<HTMLDivElement | null>(null);
 
   const allFound = foundWordIds.size === placements.length;
+
+  function markFound(placement: (typeof placements)[number]) {
+    setFoundWordIds((prev) => new Set(prev).add(placement.word.id));
+    setFoundCellKeys((prev) => {
+      const next = new Set(prev);
+      placement.cells.forEach((c) => next.add(cellKey(c)));
+      return next;
+    });
+    setLiveMessage(`Found ${placement.word.phonemes.join(" ")}, ${placement.word.english}.`);
+  }
+
+  function handleTypedSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const guess = typedAnswer.trim().split(/\s+/).filter(Boolean).join("");
+    if (!guess) return;
+
+    const match = placements.find(
+      (p) => !foundWordIds.has(p.word.id) && p.word.phonemes.join("") === guess,
+    );
+    if (match) {
+      markFound(match);
+    } else {
+      setLiveMessage("No matching word. Try again.");
+    }
+    setTypedAnswer("");
+  }
 
   function cellFromPoint(x: number, y: number): Cell | null {
     const el = document.elementFromPoint(x, y);
@@ -53,12 +81,7 @@ export function WordSearchGrid({ puzzle }: { puzzle: WordSearchPuzzle }) {
       for (const placement of placements) {
         if (foundWordIds.has(placement.word.id)) continue;
         if (cellsMatchWord(activePath, grid, placement.word)) {
-          setFoundWordIds((prev) => new Set(prev).add(placement.word.id));
-          setFoundCellKeys((prev) => {
-            const next = new Set(prev);
-            placement.cells.forEach((c) => next.add(cellKey(c)));
-            return next;
-          });
+          markFound(placement);
           break;
         }
       }
@@ -75,8 +98,10 @@ export function WordSearchGrid({ puzzle }: { puzzle: WordSearchPuzzle }) {
     <div className="flex flex-col items-center gap-6">
       <div
         ref={gridRef}
-        role="grid"
-        aria-label="Phoneme word search grid"
+        // The visual grid is mouse/touch-only (cells aren't individually
+        // focusable); it's hidden from assistive tech in favour of the
+        // fully keyboard-operable typed alternative below.
+        aria-hidden="true"
         className="grid touch-none gap-0.5 rounded-xl border border-zinc-200 bg-zinc-100 p-2 select-none dark:border-zinc-800 dark:bg-zinc-900"
         style={{
           gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
@@ -98,7 +123,6 @@ export function WordSearchGrid({ puzzle }: { puzzle: WordSearchPuzzle }) {
                 key={key}
                 data-row={r}
                 data-col={c}
-                role="gridcell"
                 title={phonemeHint(symbol)}
                 className={`flex aspect-square w-9 items-center justify-center rounded text-sm font-bold sm:w-10 sm:text-base ${
                   isFound
@@ -128,6 +152,32 @@ export function WordSearchGrid({ puzzle }: { puzzle: WordSearchPuzzle }) {
           }),
         )}
       </div>
+
+      <p aria-live="polite" className="sr-only">
+        {liveMessage}
+      </p>
+
+      <form
+        onSubmit={handleTypedSubmit}
+        className="flex flex-wrap items-end justify-center gap-2"
+      >
+        <label className="flex flex-col text-sm text-zinc-700 dark:text-zinc-300">
+          Keyboard alternative: type a word&apos;s phonemes, space-separated
+          <input
+            type="text"
+            value={typedAnswer}
+            onChange={(e) => setTypedAnswer(e.target.value)}
+            placeholder="e.g. θ ɪ n"
+            className="mt-1 w-56 rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+          />
+        </label>
+        <button
+          type="submit"
+          className="rounded-md bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+        >
+          Check
+        </button>
+      </form>
 
       <div className="flex flex-col items-center gap-3">
         <button

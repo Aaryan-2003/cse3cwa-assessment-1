@@ -63,7 +63,8 @@ export default function WordSearchPage() {
               key={w.id}
               className="rounded-md bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
             >
-              {w.phonemes.join(" ")} <span className="text-zinc-400">({w.english})</span>
+              {w.phonemes.join(" ")}{" "}
+              <span className="text-zinc-600 dark:text-zinc-400">({w.english})</span>
             </li>
           ))}
         </ul>

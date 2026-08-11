@@ -161,7 +161,7 @@ export function WordleGame({ word }: { word: PhonemeWord }) {
                   title={`/${symbol}/ ${phonemeHint(symbol)}`}
                   disabled={status !== "playing"}
                   onClick={() => pushPhoneme(symbol)}
-                  className={`min-w-9 rounded-md border px-2 py-2 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                  className={`min-h-10 min-w-10 rounded-md border px-2.5 py-2.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
                     keyStatus
                       ? KEY_STATUS_STYLES[keyStatus]
                       : "border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
