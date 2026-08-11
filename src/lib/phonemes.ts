@@ -58,6 +58,28 @@ export function phonemeHint(symbol: string): string {
   return PHONEME_HINTS[symbol] ?? symbol;
 }
 
+// Short spelled-letter label for keyboard buttons, e.g. "TH" for /θ/,
+// with the full hint ("TH (as in thin)") reserved for the mouse-over title.
+export function phonemeShortLabel(symbol: string): string {
+  const hint = PHONEME_HINTS[symbol];
+  if (!hint) return symbol.toUpperCase();
+  return hint.split(" (")[0];
+}
+
+// Mirrors the phoneme keyboard layout supplied for this activity: plosives,
+// nasals, fricatives, approximants/affricates, then vowels.
+export const KEYBOARD_LAYOUT: string[][] = [
+  ["p", "t", "k"],
+  ["b", "d", "ɡ"],
+  ["n", "m", "ŋ"],
+  ["f", "s", "θ", "ʃ"],
+  ["v", "z", "ð", "ʒ"],
+  ["l", "ɹ", "w", "j", "h", "tʃ", "dʒ"],
+  ["iː", "ɪ", "e", "eː", "æ", "ɐ", "ɐː", "ɜː", "ʉː", "ɔ", "oː", "ʊ"],
+  ["æɪ", "ɑe", "oɪ", "əʉ", "æɔ", "ɪə"],
+  ["ə"],
+];
+
 // Assessment 1 uses a fixed word list — dynamic word-list management is
 // introduced in a later assessment.
 export const WORDLE_WORD: PhonemeWord = {
