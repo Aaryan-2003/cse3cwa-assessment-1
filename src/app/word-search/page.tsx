@@ -5,6 +5,7 @@ import { WordSearchGrid } from "@/components/WordSearchGrid";
 import { PHONEME_HINTS, WORD_SEARCH_WORDS, phonemeHint } from "@/lib/phonemes";
 import { buildWordSearch, type WordSearchPuzzle } from "@/lib/wordsearch";
 import { generateWordSearchHtml } from "@/lib/exportWordSearch";
+import { readDefaultGridSize, writeDefaultGridSize } from "@/lib/wordSearchPrefs";
 
 const MIN_SIZE = 8;
 const MAX_SIZE = 15;
@@ -18,14 +19,19 @@ export default function WordSearchPage() {
   const [puzzle, setPuzzle] = useState<WordSearchPuzzle | null>(null);
 
   useEffect(() => {
-    // Puzzle placement is randomised, so it must only run on the client
-    // (after mount) to avoid a server/client markup mismatch.
+    // Puzzle placement is randomised and the grid-size preference lives in
+    // localStorage, so both must be read/set on the client only, after
+    // mount, to avoid a server/client markup mismatch.
+    const size = readDefaultGridSize({ rows: DEFAULT_SIZE, cols: DEFAULT_SIZE });
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPuzzle(buildWordSearch(WORD_SEARCH_WORDS, DEFAULT_SIZE, DEFAULT_SIZE));
+    setRows(size.rows);
+    setCols(size.cols);
+    setPuzzle(buildWordSearch(WORD_SEARCH_WORDS, size.rows, size.cols));
   }, []);
 
   function regenerate() {
     setPuzzle(buildWordSearch(WORD_SEARCH_WORDS, rows, cols));
+    writeDefaultGridSize({ rows, cols });
   }
 
   function handleDownload() {
