@@ -54,11 +54,17 @@ export default function AboutPage() {
           Video walkthrough
         </h3>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          A short video explaining how to use this website will be embedded
-          here.
+          A short video explaining how to use this website and the design
+          decisions behind it.
         </p>
-        <div className="mt-4 flex aspect-video items-center justify-center rounded-lg border border-dashed border-zinc-300 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-500">
-          Video placeholder
+        <div className="mt-4 aspect-video overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800">
+          <iframe
+            className="h-full w-full"
+            src="https://www.youtube.com/embed/j2QobUfJUsc"
+            title="CSE3CWA Assessment 1 video walkthrough"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+          />
         </div>
       </div>
     </div>
