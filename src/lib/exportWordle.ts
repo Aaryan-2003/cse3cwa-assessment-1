@@ -31,7 +31,9 @@ export function generateWordleHtml(word: PhonemeWord): string {
   .tile.absent { background:var(--absent); border-color:var(--absent); color:white; }
   .keyboard { display:flex; flex-direction:column; align-items:center; gap:6px; margin-top:20px; max-width:640px; }
   .krow { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; }
-  .key { min-width:34px; padding:8px; border-radius:6px; border:1px solid #cbd5e1; background:white; font-weight:600; font-size:0.75rem; cursor:pointer; }
+  .key { min-width:34px; padding:6px 8px; border-radius:6px; border:1px solid #cbd5e1; background:white; font-weight:600; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; line-height:1; }
+  .key .key-label { font-size:0.75rem; }
+  .key .key-symbol { font-size:0.6rem; font-weight:400; opacity:0.7; }
   .key.correct { background:var(--correct); border-color:var(--correct); color:white; }
   .key.present { background:var(--present); border-color:var(--present); color:white; }
   .key.absent { background:#e2e8f0; color:#94a3b8; }
@@ -129,7 +131,14 @@ export function generateWordleHtml(word: PhonemeWord): string {
       row.forEach(function (symbol) {
         const btn = document.createElement('button');
         btn.className = 'key' + (ks[symbol] ? ' ' + ks[symbol] : '');
-        btn.textContent = (hint(symbol).split(' (')[0]) || symbol.toUpperCase();
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'key-label';
+        labelSpan.textContent = (hint(symbol).split(' (')[0]) || symbol.toUpperCase();
+        const symbolSpan = document.createElement('span');
+        symbolSpan.className = 'key-symbol';
+        symbolSpan.textContent = '/' + symbol + '/';
+        btn.appendChild(labelSpan);
+        btn.appendChild(symbolSpan);
         btn.title = '/' + symbol + '/ ' + hint(symbol);
         btn.disabled = gameStatus !== 'playing';
         btn.addEventListener('click', function () { pushPhoneme(symbol); });
