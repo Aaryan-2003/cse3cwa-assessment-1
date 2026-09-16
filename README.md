@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Phoneme Activity Builder
 
-## Getting Started
+A Wordle-style web app builder for Speech Pathology teachers and students. Teachers configure phoneme-based Wordle and Word Search activities and download them as standalone, playable HTML files.
 
-First, run the development server:
+This is a two-part Next.js application:
+
+- **`frontend/`** — the builder UI (Home, About, Wordle, Word Search, Settings)
+- **`api/`** — a REST API backed by PostgreSQL (via Prisma) that stores phonemes, words, word lists, and saved activity configurations
+
+## Running with Docker (recommended)
+
+Requires Docker and Docker Compose.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+docker-compose up
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This builds and starts all three services — `postgres`, `api`, `frontend` — waiting for each to be healthy before starting the next. On first run, the API automatically applies database migrations and seeds the database with the full phoneme word corpus.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Frontend: http://localhost:3000
+- API: http://localhost:4000 (see http://localhost:4000 for a list of endpoints, or http://localhost:4000/api/health)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Data persists in a Docker volume across restarts — the seed script only runs if the database is empty, so it won't overwrite anything you've created via the API.
 
-## Learn More
+## Running locally without Docker
 
-To learn more about Next.js, take a look at the following resources:
+Requires Node.js 22+ and a running PostgreSQL instance.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**API:**
+```bash
+cd api
+npm install
+cp .env.example .env   # adjust DATABASE_URL if needed
+npx prisma migrate dev
+npx prisma db seed
+npm run dev             # http://localhost:4000
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Frontend** (in a separate terminal):
+```bash
+cd frontend
+npm install
+cp .env.example .env.local
+npm run dev             # http://localhost:3000
+```
 
-## Deploy on Vercel
+## Project structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+frontend/    Next.js app — pages, components, HTML export logic
+api/         Next.js app — Prisma schema, CRUD routes, seed data
+docker-compose.yml
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Tech stack
+
+Next.js (App Router, TypeScript), Tailwind CSS, Prisma, PostgreSQL, Zod, Docker.
