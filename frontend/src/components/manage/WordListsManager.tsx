@@ -21,6 +21,7 @@ export function WordListsManager() {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [selectedWordIds, setSelectedWordIds] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
@@ -53,15 +54,26 @@ export function WordListsManager() {
     setCreating(true);
     setCreateError(null);
     try {
-      await createWordList({ name: name.trim(), description: description.trim() || undefined });
+      await createWordList({
+        name: name.trim(),
+        description: description.trim() || undefined,
+        wordIds: selectedWordIds,
+      });
       setName("");
       setDescription("");
+      setSelectedWordIds([]);
       await load();
     } catch (err) {
       setCreateError(err instanceof ApiError ? err.message : "Failed to create word list.");
     } finally {
       setCreating(false);
     }
+  }
+
+  function toggleSelectedWord(wordId: string) {
+    setSelectedWordIds((ids) =>
+      ids.includes(wordId) ? ids.filter((id) => id !== wordId) : [...ids, wordId],
+    );
   }
 
   async function handleDelete(id: string) {
@@ -134,6 +146,43 @@ export function WordListsManager() {
             />
           </label>
         </div>
+
+        <div>
+          <p className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            Words ({selectedWordIds.length} selected)
+          </p>
+          {allWords.length === 0 ? (
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              No words yet — add some in the Words tab first, or create this list empty and
+              add words to it later.
+            </p>
+          ) : (
+            <div className="flex max-h-56 flex-wrap gap-2 overflow-y-auto rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
+              {allWords.map((w) => {
+                const isSelected = selectedWordIds.includes(w.id);
+                return (
+                  <label
+                    key={w.id}
+                    className={`flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-1 text-xs ${
+                      isSelected
+                        ? "border-blue-400 bg-blue-50 text-blue-900 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                        : "border-zinc-300 bg-white text-zinc-700 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelectedWord(w.id)}
+                      className="h-3.5 w-3.5"
+                    />
+                    {w.english}
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {createError && (
           <p className="text-sm font-medium text-red-600 dark:text-red-400" role="alert">
             {createError}
