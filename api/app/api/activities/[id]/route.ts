@@ -2,6 +2,8 @@ import { corsHeaders, errorResponse, json, withErrorHandling } from "@/lib/http"
 import { prisma } from "@/lib/prisma";
 import { activityUpdateSchema } from "@/lib/validation";
 
+export const dynamic = "force-dynamic";
+
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: corsHeaders });
 }

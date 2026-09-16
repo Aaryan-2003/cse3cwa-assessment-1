@@ -4,6 +4,11 @@ import { serializeWord } from "@/lib/serializers";
 import { wordCreateSchema } from "@/lib/validation";
 import { resolvePhonemeIds } from "@/lib/words";
 
+// Always read fresh from the database — this data changes constantly
+// via the Manage UI, so Next's Route Handler caching must never serve
+// a stale snapshot.
+export const dynamic = "force-dynamic";
+
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: corsHeaders });
 }

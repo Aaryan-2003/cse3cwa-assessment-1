@@ -2,6 +2,11 @@ import { corsHeaders, json, withErrorHandling } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { wordListCreateSchema } from "@/lib/validation";
 
+// Always read fresh from the database — this data changes constantly
+// via the Manage UI, so Next's Route Handler caching must never serve
+// a stale snapshot.
+export const dynamic = "force-dynamic";
+
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: corsHeaders });
 }
