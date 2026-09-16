@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Phoneme Activity Builder — API
 
-## Getting Started
+A Next.js app used purely as a REST API (no pages) — it serves `frontend/`, backed by PostgreSQL via Prisma. Originally scaffolded with `create-next-app`.
 
-First, run the development server:
+## Running
+
+Usually run via `docker compose up` from the repo root, which also starts Postgres and the frontend. To run standalone:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env   # adjust DATABASE_URL if needed
+npx prisma migrate dev
+npx prisma db seed
+npm run dev             # http://localhost:4000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Endpoints
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Route | Methods |
+|---|---|
+| `/api/health` | `GET` — process + database connectivity check |
+| `/api/phonemes`, `/api/phonemes/:id` | `GET`, `POST`, `PATCH`, `DELETE` |
+| `/api/words`, `/api/words/:id` | `GET`, `POST`, `PATCH`, `DELETE` |
+| `/api/word-lists`, `/api/word-lists/:id` | `GET`, `POST`, `PATCH`, `DELETE` |
+| `/api/activities`, `/api/activities/:id` | `GET`, `POST`, `PATCH`, `DELETE` |
+| `/api/activities/:id/generate` | `GET` — samples words fresh from the activity's word list and returns everything the frontend needs to render/export it |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+All routes validate request bodies with Zod (`lib/validation.ts`) and return errors as consistent JSON via a shared handler (`lib/http.ts`), and are all marked `export const dynamic = "force-dynamic"` so responses are never cached — every request reads live from Postgres.
 
-## Learn More
+## Data model
 
-To learn more about Next.js, take a look at the following resources:
+See `prisma/schema.prisma`. In short: `Phoneme` → `WordPhoneme` (ordered join table, supports multi-character symbols) → `Word` → `WordListEntry` → `WordList` → `Activity` (references a word list rather than storing its own words, so activities regenerate from whatever the list currently contains).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Seeding
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`prisma/seed.ts` populates the full phoneme word corpus plus a small "Starter Set" word list. It only runs if the database is empty (checked in `entrypoint.sh` / on `npx prisma db seed`), so it won't overwrite data created through the API.
