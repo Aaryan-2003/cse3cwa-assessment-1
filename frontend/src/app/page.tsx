@@ -43,7 +43,11 @@ export default function Home() {
       </div>
 
       <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-6 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
-        Want to know more about the project, or need help using it? See the{" "}
+        Want to add your own words, word lists, or activity settings? Head to{" "}
+        <Link href="/manage" className="font-medium text-blue-700 underline dark:text-blue-400">
+          Manage Content
+        </Link>
+        . Want to know more about the project, or need help using it? See the{" "}
         <Link href="/about" className="font-medium text-blue-700 underline dark:text-blue-400">
           About
         </Link>{" "}
