@@ -79,19 +79,3 @@ export const KEYBOARD_LAYOUT: string[][] = [
   ["æɪ", "ɑe", "oɪ", "əʉ", "æɔ", "ɪə"],
   ["ə"],
 ];
-
-// Assessment 1 uses a fixed word list — dynamic word-list management is
-// introduced in a later assessment.
-export const WORDLE_WORD: PhonemeWord = {
-  id: "thin",
-  phonemes: ["θ", "ɪ", "n"],
-  english: "thin",
-};
-
-export const WORD_SEARCH_WORDS: PhonemeWord[] = [
-  { id: "thin", phonemes: ["θ", "ɪ", "n"], english: "thin" },
-  { id: "then", phonemes: ["ð", "e", "n"], english: "then" },
-  { id: "ship", phonemes: ["ʃ", "ɪ", "p"], english: "ship" },
-  { id: "chin", phonemes: ["tʃ", "ɪ", "n"], english: "chin" },
-  { id: "jam", phonemes: ["dʒ", "æ", "m"], english: "jam" },
-];

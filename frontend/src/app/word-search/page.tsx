@@ -2,36 +2,68 @@
 
 import { useEffect, useState } from "react";
 import { WordSearchGrid } from "@/components/WordSearchGrid";
-import { PHONEME_HINTS, WORD_SEARCH_WORDS, phonemeHint } from "@/lib/phonemes";
+import { phonemeHint } from "@/lib/phonemes";
 import { buildWordSearch, type WordSearchPuzzle } from "@/lib/wordsearch";
 import { generateWordSearchHtml } from "@/lib/exportWordSearch";
 import { readDefaultGridSize, writeDefaultGridSize } from "@/lib/wordSearchPrefs";
+import { ApiError, fetchActivities, generateActivity, type ApiWord } from "@/lib/api";
 
 const MIN_SIZE = 8;
 const MAX_SIZE = 15;
 const DEFAULT_SIZE = 10;
 
+type LoadState =
+  | { status: "loading" }
+  | { status: "error"; message: string }
+  | { status: "ready"; activityId: string; words: ApiWord[]; hints: Record<string, string> };
+
 export default function WordSearchPage() {
   const [rows, setRows] = useState(DEFAULT_SIZE);
   const [cols, setCols] = useState(DEFAULT_SIZE);
-  // Puzzle placement uses randomness, so it's generated client-side only
+  const [state, setState] = useState<LoadState>({ status: "loading" });
+  // Puzzle placement uses randomness, so it's built client-side only
   // (after mount) to avoid a server/client markup mismatch.
   const [puzzle, setPuzzle] = useState<WordSearchPuzzle | null>(null);
 
+  async function loadWordSearchActivity(gridRows: number, gridCols: number) {
+    setState({ status: "loading" });
+    try {
+      const activities = await fetchActivities("WORD_SEARCH");
+      if (activities.length === 0) {
+        setState({ status: "error", message: "No Word Search activity has been configured yet." });
+        return;
+      }
+      const generated = await generateActivity(activities[0].id);
+      setState({
+        status: "ready",
+        activityId: activities[0].id,
+        words: generated.words,
+        hints: generated.hints,
+      });
+      setPuzzle(buildWordSearch(generated.words, gridRows, gridCols));
+    } catch (err) {
+      setState({
+        status: "error",
+        message: err instanceof ApiError ? err.message : "Failed to load the Word Search activity.",
+      });
+    }
+  }
+
   useEffect(() => {
-    // Puzzle placement is randomised and the grid-size preference lives in
-    // localStorage, so both must be read/set on the client only, after
-    // mount, to avoid a server/client markup mismatch.
     const size = readDefaultGridSize({ rows: DEFAULT_SIZE, cols: DEFAULT_SIZE });
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setRows(size.rows);
     setCols(size.cols);
-    setPuzzle(buildWordSearch(WORD_SEARCH_WORDS, size.rows, size.cols));
+    loadWordSearchActivity(size.rows, size.cols);
   }, []);
 
   function regenerate() {
-    setPuzzle(buildWordSearch(WORD_SEARCH_WORDS, rows, cols));
     writeDefaultGridSize({ rows, cols });
+    if (state.status === "ready") {
+      // Re-fetch: the backend picks a fresh random set of words, not
+      // just a new arrangement of the same ones.
+      loadWordSearchActivity(rows, cols);
+    }
   }
 
   function handleDownload() {
@@ -48,6 +80,9 @@ export default function WordSearchPage() {
     URL.revokeObjectURL(url);
   }
 
+  const words = state.status === "ready" ? state.words : [];
+  const hints = state.status === "ready" ? state.hints : {};
+
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-8 px-4 py-12 sm:px-6">
       <div>
@@ -55,16 +90,33 @@ export default function WordSearchPage() {
           Word Search Builder
         </h2>
         <p className="mt-2 max-w-2xl text-zinc-700 dark:text-zinc-300">
-          A fixed set of five phoneme-based words is used for Assessment 1.
-          Drag across the grid to find each word&apos;s phoneme sequence.
-          Hover any tile to see its plain-English sound.
+          Words are drawn from the saved word list by the backend each time
+          the puzzle is generated. Drag across the grid to find each
+          word&apos;s phoneme sequence. Hover any tile to see its
+          plain-English sound.
         </p>
       </div>
 
+      {state.status === "error" && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+          <p>{state.message}</p>
+          <button
+            type="button"
+            onClick={() => loadWordSearchActivity(rows, cols)}
+            className="mt-3 rounded-full border border-red-300 bg-white px-4 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-800 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
       <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
         <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">Word list</h3>
+        {state.status === "loading" && (
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Loading…</p>
+        )}
         <ul className="mt-3 flex flex-wrap gap-2">
-          {WORD_SEARCH_WORDS.map((w) => (
+          {words.map((w) => (
             <li
               key={w.id}
               className="rounded-md bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
@@ -104,7 +156,8 @@ export default function WordSearchPage() {
           <button
             type="button"
             onClick={regenerate}
-            className="rounded-full bg-blue-700 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            disabled={state.status === "loading"}
+            className="rounded-full bg-blue-700 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Regenerate puzzle
           </button>
@@ -122,30 +175,30 @@ export default function WordSearchPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-950">
-        <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
-          Phoneme hint legend
-        </h3>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Hover any grid tile to see this hint. Symbols used in this puzzle:
-        </p>
-        <ul className="mt-3 flex flex-wrap gap-2">
-          {Array.from(new Set(WORD_SEARCH_WORDS.flatMap((w) => w.phonemes))).map(
-            (symbol) => (
+      {words.length > 0 && (
+        <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-950">
+          <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
+            Phoneme hint legend
+          </h3>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            Hover any grid tile to see this hint. Symbols used in this puzzle:
+          </p>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {Array.from(new Set(words.flatMap((w) => w.phonemes))).map((symbol) => (
               <li
                 key={symbol}
-                title={PHONEME_HINTS[symbol]}
+                title={hints[symbol]}
                 className="rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm dark:border-zinc-800 dark:bg-zinc-900"
               >
                 <span className="font-mono font-semibold">/{symbol}/</span>{" "}
                 <span className="text-zinc-500 dark:text-zinc-400">
-                  {phonemeHint(symbol)}
+                  {hints[symbol] ?? phonemeHint(symbol)}
                 </span>
               </li>
-            ),
-          )}
-        </ul>
-      </div>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div>
         <button

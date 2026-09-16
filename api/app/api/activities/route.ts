@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const activities = await prisma.activity.findMany({
       where: type ? { type: type as "WORDLE" | "WORD_SEARCH" } : {},
       include: { wordList: { select: { id: true, name: true } } },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "asc" },
     });
 
     return json(activities);

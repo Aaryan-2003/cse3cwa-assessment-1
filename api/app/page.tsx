@@ -1,69 +1,43 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+const ENDPOINTS = [
+  { method: "GET", path: "/api/health", desc: "Health check — confirms the API and database are reachable." },
+  { method: "GET", path: "/api/phonemes", desc: "List all phoneme symbols and their hints." },
+  { method: "POST", path: "/api/phonemes", desc: "Create a phoneme symbol." },
+  { method: "GET/PATCH/DELETE", path: "/api/phonemes/:id", desc: "Read, update, or delete a phoneme." },
+  { method: "GET", path: "/api/words", desc: "List words. Filter with ?difficulty= and/or ?wordListId=." },
+  { method: "POST", path: "/api/words", desc: "Create a word from an ordered array of existing phoneme symbols." },
+  { method: "GET/PATCH/DELETE", path: "/api/words/:id", desc: "Read, update, or delete a word." },
+  { method: "GET", path: "/api/word-lists", desc: "List word lists with word/activity counts." },
+  { method: "POST", path: "/api/word-lists", desc: "Create a word list, optionally with initial word IDs." },
+  { method: "GET/PATCH/DELETE", path: "/api/word-lists/:id", desc: "Read (with full words), update, or delete a word list." },
+  { method: "GET", path: "/api/activities", desc: "List saved Wordle/Word Search activity configurations." },
+  { method: "POST", path: "/api/activities", desc: "Create an activity configuration referencing a word list." },
+  { method: "GET/PATCH/DELETE", path: "/api/activities/:id", desc: "Read, update, or delete an activity." },
+  { method: "GET", path: "/api/activities/:id/generate", desc: "Pick words from the word list and return everything the frontend needs to render/export the activity." },
+];
 
 export default function Home() {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>
-            To get started, edit the{" "}
-            <code className={styles.code}>page.tsx</code> file.
-          </h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div style={{ padding: "2rem", fontFamily: "system-ui, sans-serif", maxWidth: 900, margin: "0 auto" }}>
+      <h1>Phoneme Activity Builder — API</h1>
+      <p>Backend for the Assessment 1 Wordle / Word Search frontend. All routes return JSON.</p>
+      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "1.5rem" }}>
+        <thead>
+          <tr style={{ textAlign: "left", borderBottom: "2px solid #ccc" }}>
+            <th style={{ padding: "0.5rem" }}>Method</th>
+            <th style={{ padding: "0.5rem" }}>Path</th>
+            <th style={{ padding: "0.5rem" }}>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ENDPOINTS.map((e) => (
+            <tr key={e.path + e.method} style={{ borderBottom: "1px solid #eee" }}>
+              <td style={{ padding: "0.5rem", fontFamily: "monospace", whiteSpace: "nowrap" }}>{e.method}</td>
+              <td style={{ padding: "0.5rem", fontFamily: "monospace", whiteSpace: "nowrap" }}>{e.path}</td>
+              <td style={{ padding: "0.5rem" }}>{e.desc}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
