@@ -1,0 +1,111 @@
+// Prisma schema for the Phoneme Activity Builder backend.
+// See https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ActivityType {
+  WORDLE
+  WORD_SEARCH
+}
+
+// Roughly mirrors the assessment corpus: 3/4/5-phoneme words map to
+// easy/medium/hard.
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+// A single phoneme symbol, reused across many words. Kept as its own
+// table (rather than a plain string array on Word) so the plain-English
+// hint used for mouse-over hints lives in one place instead of being
+// duplicated per word.
+model Phoneme {
+  id        String   @id @default(uuid())
+  symbol    String   @unique // supports multi-character symbols, e.g. "tʃ", "dʒ", "əʉ"
+  hint      String // plain-English hint, e.g. "CH (as in chin)"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  wordPhonemes WordPhoneme[]
+}
+
+// A single phoneme-based word, e.g. "thin" -> /θ ɪ n/.
+model Word {
+  id         String     @id @default(uuid())
+  english    String
+  difficulty Difficulty
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  phonemes        WordPhoneme[]
+  wordListEntries WordListEntry[]
+}
+
+// Join table giving each word an ordered sequence of phonemes.
+model WordPhoneme {
+  id        String  @id @default(uuid())
+  word      Word    @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  wordId    String
+  phoneme   Phoneme @relation(fields: [phonemeId], references: [id])
+  phonemeId String
+  position  Int // 0-indexed order within the word
+
+  @@unique([wordId, position])
+  @@index([wordId])
+}
+
+// A named, reusable collection of words a teacher has built up, e.g.
+// "Term 1 - CH/J sounds". Both Wordle and Word Search activities draw
+// their words from a word list rather than a fixed, hardcoded set.
+model WordList {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  entries    WordListEntry[]
+  activities Activity[]
+}
+
+model WordListEntry {
+  id         String   @id @default(uuid())
+  wordList   WordList @relation(fields: [wordListId], references: [id], onDelete: Cascade)
+  wordListId String
+  word       Word     @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  wordId     String
+
+  @@unique([wordListId, wordId])
+  @@index([wordListId])
+}
+
+// A saved, generatable Wordle or Word Search configuration. Words are
+// selected from the linked WordList at generation time (optionally
+// filtered by difficulty), so the same activity can regenerate with
+// different words rather than always producing identical output.
+model Activity {
+  id          String       @id @default(uuid())
+  type        ActivityType
+  title       String
+  wordList    WordList     @relation(fields: [wordListId], references: [id])
+  wordListId  String
+  wordCount   Int          @default(5) // words to draw for Word Search; ignored (treated as 1) for Wordle
+  difficulty  Difficulty? // optional filter on the word pool
+  showHints   Boolean      @default(true)
+  gridRows    Int? // Word Search only
+  gridCols    Int? // Word Search only
+  maxAttempts Int?         @default(6) // Wordle only
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([wordListId])
+}
