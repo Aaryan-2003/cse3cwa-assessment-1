@@ -6,7 +6,7 @@ import { phonemeHint } from "@/lib/phonemes";
 import { buildWordSearch, type WordSearchPuzzle } from "@/lib/wordsearch";
 import { generateWordSearchHtml } from "@/lib/exportWordSearch";
 import { readDefaultGridSize, writeDefaultGridSize } from "@/lib/wordSearchPrefs";
-import { ApiError, fetchActivities, generateActivity, type ApiWord } from "@/lib/api";
+import { ApiError, fetchAllActivities, generateActivity, type Activity, type ApiWord } from "@/lib/api";
 
 const MIN_SIZE = 8;
 const MAX_SIZE = 15;
@@ -20,23 +20,43 @@ type LoadState =
 export default function WordSearchPage() {
   const [rows, setRows] = useState(DEFAULT_SIZE);
   const [cols, setCols] = useState(DEFAULT_SIZE);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [selectedId, setSelectedId] = useState<string>("");
   const [state, setState] = useState<LoadState>({ status: "loading" });
   // Puzzle placement uses randomness, so it's built client-side only
   // (after mount) to avoid a server/client markup mismatch.
   const [puzzle, setPuzzle] = useState<WordSearchPuzzle | null>(null);
 
-  async function loadWordSearchActivity(gridRows: number, gridCols: number) {
+  async function loadActivityList(gridRows: number, gridCols: number) {
     setState({ status: "loading" });
     try {
-      const activities = await fetchActivities("WORD_SEARCH");
-      if (activities.length === 0) {
+      const all = await fetchAllActivities();
+      const wordSearchActivities = all.filter((a) => a.type === "WORD_SEARCH");
+      setActivities(wordSearchActivities);
+      if (wordSearchActivities.length === 0) {
         setState({ status: "error", message: "No Word Search activity has been configured yet." });
         return;
       }
-      const generated = await generateActivity(activities[0].id);
+      const id = wordSearchActivities.some((a) => a.id === selectedId)
+        ? selectedId
+        : wordSearchActivities[0].id;
+      setSelectedId(id);
+      await loadGeneratedPuzzle(id, gridRows, gridCols);
+    } catch (err) {
+      setState({
+        status: "error",
+        message: err instanceof ApiError ? err.message : "Failed to load the Word Search activity.",
+      });
+    }
+  }
+
+  async function loadGeneratedPuzzle(activityId: string, gridRows: number, gridCols: number) {
+    setState({ status: "loading" });
+    try {
+      const generated = await generateActivity(activityId);
       setState({
         status: "ready",
-        activityId: activities[0].id,
+        activityId,
         words: generated.words,
         hints: generated.hints,
       });
@@ -49,12 +69,18 @@ export default function WordSearchPage() {
     }
   }
 
+  function handleActivityChange(id: string) {
+    setSelectedId(id);
+    loadGeneratedPuzzle(id, rows, cols);
+  }
+
   useEffect(() => {
     const size = readDefaultGridSize({ rows: DEFAULT_SIZE, cols: DEFAULT_SIZE });
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setRows(size.rows);
     setCols(size.cols);
-    loadWordSearchActivity(size.rows, size.cols);
+    loadActivityList(size.rows, size.cols);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function regenerate() {
@@ -62,7 +88,7 @@ export default function WordSearchPage() {
     if (state.status === "ready") {
       // Re-fetch: the backend picks a fresh random set of words, not
       // just a new arrangement of the same ones.
-      loadWordSearchActivity(rows, cols);
+      loadGeneratedPuzzle(selectedId, rows, cols);
     }
   }
 
@@ -102,11 +128,30 @@ export default function WordSearchPage() {
           <p>{state.message}</p>
           <button
             type="button"
-            onClick={() => loadWordSearchActivity(rows, cols)}
+            onClick={() => loadActivityList(rows, cols)}
             className="mt-3 rounded-full border border-red-300 bg-white px-4 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-800 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900"
           >
             Try again
           </button>
+        </div>
+      )}
+
+      {activities.length > 0 && (
+        <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
+          <label className="flex flex-col text-sm text-zinc-700 dark:text-zinc-300">
+            Activity
+            <select
+              value={selectedId}
+              onChange={(e) => handleActivityChange(e.target.value)}
+              className="mt-1 w-full max-w-sm rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 sm:w-auto"
+            >
+              {activities.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.title} ({a.wordList.name})
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
       )}
 

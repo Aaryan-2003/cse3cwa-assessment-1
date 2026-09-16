@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { WordleGame } from "@/components/WordleGame";
 import { phonemeHint } from "@/lib/phonemes";
 import { generateWordleHtml } from "@/lib/exportWordle";
-import { ApiError, fetchActivities, generateActivity, type ApiWord } from "@/lib/api";
+import { ApiError, fetchAllActivities, generateActivity, type Activity, type ApiWord } from "@/lib/api";
 
 type LoadState =
   | { status: "loading" }
@@ -12,20 +12,38 @@ type LoadState =
   | { status: "ready"; activityId: string; word: ApiWord; hints: Record<string, string> };
 
 export default function WordlePage() {
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [selectedId, setSelectedId] = useState<string>("");
   const [state, setState] = useState<LoadState>({ status: "loading" });
 
-  async function loadWordleActivity() {
+  async function loadActivityList() {
     setState({ status: "loading" });
     try {
-      const activities = await fetchActivities("WORDLE");
-      if (activities.length === 0) {
+      const all = await fetchAllActivities();
+      const wordleActivities = all.filter((a) => a.type === "WORDLE");
+      setActivities(wordleActivities);
+      if (wordleActivities.length === 0) {
         setState({ status: "error", message: "No Wordle activity has been configured yet." });
         return;
       }
-      const generated = await generateActivity(activities[0].id);
+      const id = wordleActivities.some((a) => a.id === selectedId) ? selectedId : wordleActivities[0].id;
+      setSelectedId(id);
+      await loadGeneratedWord(id);
+    } catch (err) {
+      setState({
+        status: "error",
+        message: err instanceof ApiError ? err.message : "Failed to load the Wordle activity.",
+      });
+    }
+  }
+
+  async function loadGeneratedWord(activityId: string) {
+    setState({ status: "loading" });
+    try {
+      const generated = await generateActivity(activityId);
       setState({
         status: "ready",
-        activityId: activities[0].id,
+        activityId,
         word: generated.words[0],
         hints: generated.hints,
       });
@@ -37,9 +55,15 @@ export default function WordlePage() {
     }
   }
 
+  function handleActivityChange(id: string) {
+    setSelectedId(id);
+    loadGeneratedWord(id);
+  }
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadWordleActivity();
+    loadActivityList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleDownload() {
@@ -70,6 +94,25 @@ export default function WordlePage() {
         </p>
       </div>
 
+      {activities.length > 0 && (
+        <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
+          <label className="flex flex-col text-sm text-zinc-700 dark:text-zinc-300">
+            Activity
+            <select
+              value={selectedId}
+              onChange={(e) => handleActivityChange(e.target.value)}
+              className="mt-1 w-full max-w-sm rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 sm:w-auto"
+            >
+              {activities.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.title} ({a.wordList.name})
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
+
       <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
         {state.status === "loading" && (
           <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading activity…</p>
@@ -80,7 +123,7 @@ export default function WordlePage() {
             <p>{state.message}</p>
             <button
               type="button"
-              onClick={loadWordleActivity}
+              onClick={loadActivityList}
               className="mt-3 rounded-full border border-red-300 bg-white px-4 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 dark:border-red-800 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900"
             >
               Try again
@@ -94,7 +137,7 @@ export default function WordlePage() {
             <div className="mt-6 flex justify-center">
               <button
                 type="button"
-                onClick={loadWordleActivity}
+                onClick={() => loadGeneratedWord(selectedId)}
                 className="rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
               >
                 New word from backend
