@@ -188,7 +188,19 @@ export function WordListsManager() {
             {createError}
           </p>
         )}
-        <div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() =>
+              setSelectedWordIds(
+                selectedWordIds.length === allWords.length ? [] : allWords.map((w) => w.id),
+              )
+            }
+            disabled={allWords.length === 0}
+            className="rounded-full border border-zinc-300 bg-white px-5 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+          >
+            {selectedWordIds.length === allWords.length && allWords.length > 0 ? "Clear all" : "Select all"}
+          </button>
           <button
             type="submit"
             disabled={creating}
