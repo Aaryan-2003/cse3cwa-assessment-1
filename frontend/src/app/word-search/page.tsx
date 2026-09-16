@@ -85,11 +85,10 @@ export default function WordSearchPage() {
 
   function regenerate() {
     writeDefaultGridSize({ rows, cols });
-    if (state.status === "ready") {
-      // Re-fetch: the backend picks a fresh random set of words, not
-      // just a new arrangement of the same ones.
-      loadGeneratedPuzzle(selectedId, rows, cols);
-    }
+    // Re-validate against the current activity list rather than trusting
+    // a selectedId that may have since been deleted, then re-fetch: the
+    // backend also picks a fresh random set of words on each generate.
+    loadActivityList(rows, cols);
   }
 
   function handleDownload() {
