@@ -1,0 +1,6 @@
+# Force LF line endings for these files regardless of platform/git
+# config, so shell scripts don't break when built into Linux Docker
+# containers after being checked out on Windows.
+*.sh text eol=lf
+Dockerfile text eol=lf
+docker-compose.yml text eol=lf
