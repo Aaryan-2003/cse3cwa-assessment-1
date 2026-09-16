@@ -161,6 +161,15 @@ const HARD_WORDS: SeedWord[] = [
 ];
 
 async function main() {
+  // Runs automatically on every container start (see api/entrypoint.sh),
+  // so it must be safe to call repeatedly without wiping data a teacher
+  // has since created via the CRUD API.
+  const existingWordCount = await prisma.word.count();
+  if (existingWordCount > 0) {
+    console.log(`Database already has ${existingWordCount} words — skipping seed.`);
+    return;
+  }
+
   console.log("Seeding phonemes...");
   for (const [symbol, hint] of Object.entries(PHONEME_HINTS)) {
     await prisma.phoneme.upsert({

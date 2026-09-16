@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Standalone CommonJS ops script run directly via `node`, not part
+    // of the Next.js app bundle.
+    "wait-for-postgres.js",
   ]),
 ]);
 
