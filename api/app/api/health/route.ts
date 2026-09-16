@@ -1,6 +1,8 @@
 import { corsHeaders, json } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: corsHeaders });
 }

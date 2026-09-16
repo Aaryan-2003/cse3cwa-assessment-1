@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { serializeWord } from "@/lib/serializers";
 import { wordListUpdateSchema } from "@/lib/validation";
 
+export const dynamic = "force-dynamic";
+
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: corsHeaders });
 }

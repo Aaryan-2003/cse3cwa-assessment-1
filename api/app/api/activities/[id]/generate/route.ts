@@ -2,6 +2,12 @@ import { corsHeaders, errorResponse, json, withErrorHandling } from "@/lib/http"
 import { prisma } from "@/lib/prisma";
 import { serializeWord } from "@/lib/serializers";
 
+// Must never be cached: this generates a fresh, randomized selection
+// from whatever the activity's word list currently contains, and a
+// stale cached response can otherwise keep returning "not found" for
+// an activity that genuinely exists (or stale words after edits).
+export const dynamic = "force-dynamic";
+
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: corsHeaders });
 }

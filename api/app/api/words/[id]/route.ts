@@ -4,6 +4,8 @@ import { serializeWord } from "@/lib/serializers";
 import { wordUpdateSchema } from "@/lib/validation";
 import { resolvePhonemeIds } from "@/lib/words";
 
+export const dynamic = "force-dynamic";
+
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: corsHeaders });
 }
