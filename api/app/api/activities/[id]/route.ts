@@ -1,3 +1,4 @@
+import { resolveActivityTypeFields } from "@/lib/activities";
 import { corsHeaders, errorResponse, json, withErrorHandling } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { activityUpdateSchema } from "@/lib/validation";
@@ -27,9 +28,19 @@ export async function PATCH(request: Request, { params }: Params) {
     const { id } = await params;
     const body = activityUpdateSchema.parse(await request.json());
 
+    const existing = await prisma.activity.findUnique({ where: { id } });
+    if (!existing) return errorResponse(404, "Activity not found");
+
+    const finalType = body.type ?? existing.type;
+    const typeFields = resolveActivityTypeFields(finalType, {
+      gridRows: body.gridRows ?? existing.gridRows,
+      gridCols: body.gridCols ?? existing.gridCols,
+      maxAttempts: body.maxAttempts ?? existing.maxAttempts,
+    });
+
     const activity = await prisma.activity.update({
       where: { id },
-      data: body,
+      data: { ...body, ...typeFields },
       include: { wordList: { select: { id: true, name: true } } },
     });
 
