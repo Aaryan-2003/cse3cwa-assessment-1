@@ -5,10 +5,16 @@ import { UnknownPhonemeError } from "@/lib/words";
 
 // Frontend and API are separate origins (different Docker containers /
 // ports), so every response needs these to let the browser accept it.
+// Restricted to the configured frontend origin rather than "*" — this
+// is a private teacher-facing tool with no public API consumers, so
+// there's no reason to accept requests from arbitrary origins.
+const ALLOWED_ORIGIN = process.env.FRONTEND_ORIGIN ?? "http://localhost:3000";
+
 export const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
+  Vary: "Origin",
 };
 
 export function json(data: unknown, status = 200) {
