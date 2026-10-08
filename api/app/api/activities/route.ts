@@ -1,3 +1,4 @@
+import { resolveActivityTypeFields } from "@/lib/activities";
 import { corsHeaders, json, withErrorHandling } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { activityCreateSchema } from "@/lib/validation";
@@ -31,7 +32,6 @@ export async function POST(request: Request) {
   return withErrorHandling(async () => {
     const body = activityCreateSchema.parse(await request.json());
 
-    const isWordSearch = body.type === "WORD_SEARCH";
     const activity = await prisma.activity.create({
       data: {
         type: body.type,
@@ -40,9 +40,7 @@ export async function POST(request: Request) {
         wordCount: body.wordCount,
         difficulty: body.difficulty,
         showHints: body.showHints,
-        gridRows: isWordSearch ? (body.gridRows ?? 10) : undefined,
-        gridCols: isWordSearch ? (body.gridCols ?? 10) : undefined,
-        maxAttempts: body.type === "WORDLE" ? (body.maxAttempts ?? 6) : undefined,
+        ...resolveActivityTypeFields(body.type, body),
       },
       include: { wordList: { select: { id: true, name: true } } },
     });
