@@ -107,5 +107,38 @@ model Activity {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
+  generationEvents GenerationEvent[]
+
   @@index([wordListId])
+}
+
+// One row per call to /api/activities/:id/generate — the raw material
+// for the dashboard's generation/observability stats. The activity
+// relation is optional and set to null (not cascaded) if the activity
+// is later deleted, so historical stats survive — type/title are
+// snapshotted at generation time for the same reason.
+model GenerationEvent {
+  id            String       @id @default(uuid())
+  activity      Activity?    @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  activityId    String?
+  activityType  ActivityType
+  activityTitle String
+  success       Boolean
+  errorMessage  String? // populated when success is false
+  createdAt     DateTime     @default(now())
+
+  @@index([activityId])
+  @@index([createdAt])
+}
+
+// One row per page visit, recorded when the visitor navigates away or
+// closes the tab. Feeds the dashboard's "average time on page" stat.
+model PageView {
+  id         String   @id @default(uuid())
+  path       String // e.g. "/wordle", "/word-search", "/manage"
+  durationMs Int
+  createdAt  DateTime @default(now())
+
+  @@index([path])
+  @@index([createdAt])
 }

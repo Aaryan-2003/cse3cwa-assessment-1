@@ -1,3 +1,4 @@
+import type { ActivityType } from "@/app/generated/prisma/client";
 import { corsHeaders, errorResponse, json, withErrorHandling } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { serializeWord } from "@/lib/serializers";
@@ -23,10 +24,29 @@ function shuffle<T>(items: T[]): T[] {
 
 type Params = { params: Promise<{ id: string }> };
 
+// Best-effort: a logging failure must never break the actual generate
+// response, so this swallows its own errors rather than propagating.
+async function logGenerationEvent(input: {
+  activityId: string;
+  activityType: ActivityType;
+  activityTitle: string;
+  success: boolean;
+  errorMessage?: string;
+}) {
+  try {
+    await prisma.generationEvent.create({ data: input });
+  } catch (err) {
+    console.error("Failed to record generation event", err);
+  }
+}
+
 // GET /api/activities/:id/generate
 // Provides everything the frontend needs to render/export the activity,
 // picking words fresh from the database each time rather than always
-// returning the same fixed set.
+// returning the same fixed set. Every attempt against a real activity
+// (success or failure) is logged for the dashboard's observability
+// stats — a lookup against a nonexistent id isn't, since there's no
+// activity to attribute it to.
 export async function GET(_request: Request, { params }: Params) {
   return withErrorHandling(async () => {
     const { id } = await params;
@@ -51,10 +71,15 @@ export async function GET(_request: Request, { params }: Params) {
       .map((e) => serializeWord(e.word));
 
     if (pool.length === 0) {
-      return errorResponse(
-        422,
-        "This activity's word list has no words matching its difficulty filter.",
-      );
+      const message = "This activity's word list has no words matching its difficulty filter.";
+      await logGenerationEvent({
+        activityId: activity.id,
+        activityType: activity.type,
+        activityTitle: activity.title,
+        success: false,
+        errorMessage: message,
+      });
+      return errorResponse(422, message);
     }
 
     const wantedCount = activity.type === "WORDLE" ? 1 : Math.min(activity.wordCount, pool.length);
@@ -65,6 +90,13 @@ export async function GET(_request: Request, { params }: Params) {
       where: { symbol: { in: [...usedSymbols] } },
     });
     const hintMap = Object.fromEntries(hints.map((h) => [h.symbol, h.hint]));
+
+    await logGenerationEvent({
+      activityId: activity.id,
+      activityType: activity.type,
+      activityTitle: activity.title,
+      success: true,
+    });
 
     return json({
       activity: {

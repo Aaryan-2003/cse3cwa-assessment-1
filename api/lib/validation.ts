@@ -41,3 +41,10 @@ export const activityCreateSchema = z.object({
   maxAttempts: z.number().int().min(1).max(20).optional(),
 });
 export const activityUpdateSchema = activityCreateSchema.partial();
+
+export const pageViewCreateSchema = z.object({
+  path: z.string().trim().min(1).max(200).startsWith("/"),
+  // Capped at 24h to reject obviously bogus/clock-skew values rather
+  // than silently skewing the average.
+  durationMs: z.number().int().min(0).max(24 * 60 * 60 * 1000),
+});

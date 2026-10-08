@@ -191,3 +191,40 @@ export function deleteActivity(id: string) {
 export function generateActivity(activityId: string) {
   return apiFetch<GeneratedActivity>(`/api/activities/${activityId}/generate`);
 }
+
+// Stats / observability
+
+export type DashboardStats = {
+  health: { status: "ok" | "error"; database: "connected" | "unreachable" };
+  counts: {
+    words: number;
+    wordLists: number;
+    activities: number;
+    activitiesByType: { WORDLE: number; WORD_SEARCH: number };
+  };
+  generation: {
+    successCount: number;
+    failureCount: number;
+    mostUsedActivityType: ActivityType | null;
+    byType: Partial<Record<ActivityType, number>>;
+  };
+  pageViews: {
+    count: number;
+    averageDurationMs: number | null;
+    byPath: Record<string, { averageDurationMs: number | null; count: number }>;
+  };
+};
+
+export function fetchStats() {
+  return apiFetch<DashboardStats>("/api/stats");
+}
+
+// Records time spent on a page. Fired on navigation/unload, so it uses
+// sendBeacon — fetch (even with keepalive) is not reliably delivered
+// once the page is already being torn down, sendBeacon is designed
+// specifically for this.
+export function recordPageView(path: string, durationMs: number) {
+  if (typeof navigator === "undefined" || !navigator.sendBeacon) return;
+  const body = new Blob([JSON.stringify({ path, durationMs })], { type: "application/json" });
+  navigator.sendBeacon(`${API_URL}/api/page-views`, body);
+}

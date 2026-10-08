@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { Header } from "@/components/Header";
 import { NavBar } from "@/components/NavBar";
 import { Footer } from "@/components/Footer";
+import { PageViewTracker } from "@/components/PageViewTracker";
 import {
   DEFAULT_MOTION,
   DEFAULT_TEXT_SIZE,
@@ -58,6 +59,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={htmlClasses}>
       <body className="min-h-full flex flex-col">
         <ThemeProvider initialTheme={theme} initialTextSize={textSize} initialMotion={motion}>
+          <PageViewTracker />
           <NavBar />
           <Header />
           <main className="flex flex-1 flex-col">{children}</main>
