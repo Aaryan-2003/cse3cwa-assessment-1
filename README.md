@@ -69,6 +69,9 @@ npm install
 npm test
 ```
 
+A JMeter load test against the API's real endpoints lives in
+`jmeter/` — see [`jmeter/README.md`](./jmeter/README.md).
+
 ## Deploying
 
 `docker-compose.yml` above is for local development (bind-mounted
@@ -82,10 +85,11 @@ instance. See [`DEPLOYMENT.md`](./DEPLOYMENT.md) for the full setup.
 frontend/    Next.js app — pages, components, HTML export logic
 api/         Next.js app — Prisma schema, CRUD routes, seed data
 e2e/         Playwright (frontend + API) and accessibility tests
+jmeter/      JMeter load test plan
 docker-compose.yml        dev
 docker-compose.prod.yml   production (EC2)
 ```
 
 ## Tech stack
 
-Next.js (App Router, TypeScript), Tailwind CSS, Prisma, PostgreSQL, Zod, Docker, Playwright, axe-core, Lighthouse.
+Next.js (App Router, TypeScript), Tailwind CSS, Prisma, PostgreSQL, Zod, Docker, Playwright, axe-core, Lighthouse, JMeter.
