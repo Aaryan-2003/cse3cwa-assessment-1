@@ -4,7 +4,7 @@ A Wordle-style web app builder for Speech Pathology teachers and students. Teach
 
 This is a two-part Next.js application:
 
-- **`frontend/`** — the builder UI (Home, About, Wordle, Word Search, Manage, Settings)
+- **`frontend/`** — the builder UI (Home, About, Wordle, Word Search, Manage, Dashboard, Settings)
 - **`api/`** — a REST API backed by PostgreSQL (via Prisma) that stores phonemes, words, word lists, and saved activity configurations
 
 ## Features
@@ -14,6 +14,7 @@ This is a two-part Next.js application:
   - **Word lists** — named, reusable groups of words, with words selectable either at creation time or afterward via a checkbox membership editor
   - **Activities** — saved Wordle/Word Search configurations (word list, difficulty filter, grid size, max attempts, hints) — multiple activities can exist per word list
 - **Wordle** (`/wordle`) and **Word Search** (`/word-search`) — pick any configured activity from a dropdown, play it in the browser, and download it as a single self-contained `.html` file
+- **Dashboard** (`/dashboard`) — live operational stats read from the database: health status, stored content counts, activity generation success/failure volume, most-used activity type, and average time on page (overall and per route)
 - **`GET /api/health`** — confirms the API process and its database connection are both reachable, and gates container startup order in Docker Compose
 
 ## Running with Docker (recommended)
@@ -21,10 +22,13 @@ This is a two-part Next.js application:
 Requires Docker and Docker Compose.
 
 ```bash
+cp .env.example .env   # fill in real values — required, there are no hardcoded defaults
 docker compose up --build
 ```
 
 This builds and starts all three services — `postgres`, `api`, `frontend` — waiting for each to be healthy before starting the next. On first run, the API automatically applies database migrations and seeds the database with the full phoneme word corpus.
+
+`.env` is gitignored and not provided — Postgres credentials and the API's allowed CORS origin are read from it, and `docker compose` refuses to start without one (no hardcoded fallback credentials).
 
 - Frontend: http://localhost:3000
 - API: http://localhost:4000 (see http://localhost:4000 for a list of endpoints, or http://localhost:4000/api/health)
