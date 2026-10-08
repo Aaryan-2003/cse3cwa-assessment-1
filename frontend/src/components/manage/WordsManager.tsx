@@ -25,7 +25,9 @@ function PhonemePicker({
     <div className="flex flex-col gap-3">
       <div className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900">
         {selected.length === 0 && (
-          <span className="text-sm text-zinc-400">Click phonemes below to build the word…</span>
+          <span className="text-sm text-zinc-500 dark:text-zinc-400">
+            Click phonemes below to build the word…
+          </span>
         )}
         {selected.map((symbol, i) => (
           <span

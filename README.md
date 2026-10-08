@@ -57,14 +57,27 @@ cp .env.example .env.local
 npm run dev             # http://localhost:3000
 ```
 
+## Testing
+
+End-to-end (frontend + API), accessibility (axe-core), and a
+documented Lighthouse pass live in `e2e/` — see
+[`e2e/README.md`](./e2e/README.md). Requires the app already running:
+
+```bash
+cd e2e
+npm install
+npm test
+```
+
 ## Project structure
 
 ```
 frontend/    Next.js app — pages, components, HTML export logic
 api/         Next.js app — Prisma schema, CRUD routes, seed data
+e2e/         Playwright (frontend + API) and accessibility tests
 docker-compose.yml
 ```
 
 ## Tech stack
 
-Next.js (App Router, TypeScript), Tailwind CSS, Prisma, PostgreSQL, Zod, Docker.
+Next.js (App Router, TypeScript), Tailwind CSS, Prisma, PostgreSQL, Zod, Docker, Playwright, axe-core, Lighthouse.
