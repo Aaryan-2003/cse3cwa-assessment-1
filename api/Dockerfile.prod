@@ -1,0 +1,34 @@
+FROM node:22-alpine AS build
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY prisma ./prisma
+COPY . .
+
+# `prisma generate` only reads the schema file, but still requires
+# DATABASE_URL to be set; the real value is supplied at container
+# start by the real DATABASE_URL env var and overrides this
+# placeholder. Generates the client for this image's platform
+# (Alpine/musl).
+ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
+RUN npx prisma generate
+RUN npm run build
+
+FROM node:22-alpine AS runtime
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Everything needed to run (no dev deps, no source maps for the build
+# step itself) comes straight from the build stage rather than a
+# second npm install.
+COPY --from=build /app ./
+
+RUN chmod +x /app/entrypoint.prod.sh
+
+EXPOSE 4000
+
+CMD ["/bin/sh", "/app/entrypoint.prod.sh"]

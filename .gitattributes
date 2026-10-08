@@ -3,4 +3,6 @@
 # containers after being checked out on Windows.
 *.sh text eol=lf
 Dockerfile text eol=lf
+Dockerfile.prod text eol=lf
 docker-compose.yml text eol=lf
+docker-compose.prod.yml text eol=lf
