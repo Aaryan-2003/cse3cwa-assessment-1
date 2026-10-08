@@ -225,6 +225,16 @@ export function fetchStats() {
 // specifically for this.
 export function recordPageView(path: string, durationMs: number) {
   if (typeof navigator === "undefined" || !navigator.sendBeacon) return;
-  const body = new Blob([JSON.stringify({ path, durationMs })], { type: "application/json" });
+  // Deliberately NOT { type: "application/json" } — that's not a
+  // CORS-safelisted content type, which forces a preflight on this
+  // cross-origin (frontend:3000 -> api:4000) request. sendBeacon
+  // preflights are sent in credentialed mode, and this API has no
+  // concept of credentials/cookies, so that preflight always failed
+  // and the request was silently dropped (caught by Lighthouse's
+  // console-errors audit, not by curl-based testing, since curl
+  // doesn't enforce CORS). The default text/plain type is safelisted,
+  // skips the preflight entirely, and the backend parses the body as
+  // JSON regardless of the Content-Type header it arrives with.
+  const body = new Blob([JSON.stringify({ path, durationMs })], { type: "text/plain" });
   navigator.sendBeacon(`${API_URL}/api/page-views`, body);
 }
