@@ -69,13 +69,21 @@ npm install
 npm test
 ```
 
+## Deploying
+
+`docker-compose.yml` above is for local development (bind-mounted
+source, `next dev`). `docker-compose.prod.yml` is a production variant
+— built images, `next start`, no bind mounts — intended for an AWS EC2
+instance. See [`DEPLOYMENT.md`](./DEPLOYMENT.md) for the full setup.
+
 ## Project structure
 
 ```
 frontend/    Next.js app — pages, components, HTML export logic
 api/         Next.js app — Prisma schema, CRUD routes, seed data
 e2e/         Playwright (frontend + API) and accessibility tests
-docker-compose.yml
+docker-compose.yml        dev
+docker-compose.prod.yml   production (EC2)
 ```
 
 ## Tech stack
